@@ -6,10 +6,10 @@ import urllib.request
 
 PARTS = {
     "MK1E4LL/A": "iPhone Duo 256GB Star White",
-    "MJW44LL/A": "iPhone 18 Pro Max 256GB Black",
+    "MK1F4LL/A": "iPhone Duo 256GB Night Sky",
     "MJW54LL/A": "iPhone 18 Pro Max 256GB Silver",
-    "MJW74LL/A": "iPhone 18 Pro Max 256GB Glacier",
 }
+
 ZIP = "10001"          # Midtown: cobre as lojas de Manhattan
 MAX_MILES = 10         # ignora lojas mais distantes (ex.: New Jersey)
 
