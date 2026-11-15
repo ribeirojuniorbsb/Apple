@@ -1,4 +1,8 @@
-"""Monitor de retirada na loja (Apple Store NYC) com alerta via ntfy."""
+"""Monitor de retirada na loja (Apple Store NYC) com alerta via ntfy.
+
+Só envia push quando um iPhone Duo estiver disponível; nesse caso,
+inclui também a disponibilidade do iPhone 18 Pro Max.
+"""
 import json
 import os
 import urllib.parse
@@ -9,6 +13,7 @@ PARTS = {
     "MK1F4LL/A": "iPhone Duo 256GB Night Sky",
     "MJW54LL/A": "iPhone 18 Pro Max 256GB Silver",
 }
+PRIORITY = {"MK1E4LL/A", "MK1F4LL/A"}   # só dispara push se algum destes estiver disponível
 
 ZIP = "10001"          # Midtown: cobre as lojas de Manhattan
 MAX_MILES = 10         # ignora lojas mais distantes (ex.: New Jersey)
@@ -30,8 +35,7 @@ def notify(title, msg, priority="high"):
         f"https://ntfy.sh/{NTFY_TOPIC}",
         data=msg.encode("utf-8"),
         headers={"Title": title.encode("utf-8"), "Priority": priority,
-                                  "Actions": "view, Abrir bag, https://www.apple.com/shop/bag"},
-
+                 "Actions": "view, Abrir bag, https://www.apple.com/shop/bag"},
     )
     urllib.request.urlopen(req, timeout=10)
 
@@ -44,14 +48,15 @@ def check():
     with urllib.request.urlopen(req, timeout=20) as r:
         data = json.load(r)
 
-    hits, n_stores = [], 0
+    hits, n_stores = [], 0   # lista de (part, texto)
     for s in data["body"]["stores"]:
         if float(s.get("storedistance", 0)) > MAX_MILES:
             continue
         n_stores += 1
         for part, info in s.get("partsAvailability", {}).items():
             if info.get("pickupDisplay") == "available":
-                hits.append(f"• {PARTS.get(part, part)}\n  {s['storeName']} ({s.get('storeDistanceWithUnit', '')})")
+                hits.append((part, f"• {PARTS.get(part, part)}\n  {s['storeName']} "
+                                   f"({s.get('storeDistanceWithUnit', '')})"))
     return hits, n_stores
 
 
@@ -64,13 +69,20 @@ def main():
             notify("Apple monitor: erro", f"Falha na consulta: {e}", "default")
         return
 
-    if hits:
-        notify("🍏 Disponível para retirada!", "\n".join(hits))
-        print("\n".join(hits))
+    duo = [t for p, t in hits if p in PRIORITY]
+    others = [t for p, t in hits if p not in PRIORITY]
+
+    if duo:
+        msg = "📱 iPhone Duo:\n" + "\n".join(duo)
+        if others:
+            msg += "\n\n➕ Também disponível:\n" + "\n".join(others)
+        notify("🍏 iPhone Duo disponível!", msg, "urgent")
+        print(msg)
     else:
-        print(f"Nada disponível em {n_stores} lojas.")
+        status = f"Duo indisponível em {n_stores} lojas. Outros disponíveis: {len(others)}."
+        print(status)
         if MANUAL_RUN:
-            notify("Apple monitor: teste OK", f"Nada disponível em {n_stores} lojas.", "default")
+            notify("Apple monitor: teste OK", status, "default")
 
 
 if __name__ == "__main__":
