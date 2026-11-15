@@ -79,7 +79,9 @@ def main():
         notify("🍏 iPhone Duo disponível!", msg, "urgent")
         print(msg)
     else:
-        status = f"Duo indisponível em {n_stores} lojas. Outros disponíveis: {len(others)}."
+        status = f"{n_stores} lojas consultadas: nenhuma com iPhone Duo."
+        if others:
+            status += "\n\n➕ Outros com estoque:\n" + "\n".join(others)
         print(status)
         if MANUAL_RUN:
             notify("Apple monitor: teste OK", status, "default")
