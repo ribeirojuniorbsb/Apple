@@ -30,7 +30,8 @@ def notify(title, msg, priority="high"):
         f"https://ntfy.sh/{NTFY_TOPIC}",
         data=msg.encode("utf-8"),
         headers={"Title": title.encode("utf-8"), "Priority": priority,
-                 "Click": "https://www.apple.com/shop/bag"},
+                                  "Actions": "view, Abrir bag, https://www.apple.com/shop/bag"},
+
     )
     urllib.request.urlopen(req, timeout=10)
 
